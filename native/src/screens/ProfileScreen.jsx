@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 
 const GOLD = '#E63946'
-const BG = '#FFFFFF'
+const BG = '#000000'
 const DEEP_BLUE = '#2D6A4F'
 
 export default function ProfileScreen({ navigation }) {
@@ -31,7 +31,7 @@ export default function ProfileScreen({ navigation }) {
             <Ionicons name="person" size={60} color={GOLD} />
           </View>
           <Text style={styles.userName}>משתמש אורח</Text>
-          <Text style={styles.userEmail}>guest@naorbaruch.com</Text>
+          <Text style={styles.userEmail}>guest@boilerroom.com</Text>
         </View>
 
         {/* Profile Options */}

@@ -17,7 +17,7 @@
   priority: 'high',            // 'high' | 'medium' | 'low'
   targetAudience: ['free', 'premium', 'vip'], // מי יראה
   timestamp: Timestamp,
-  author: 'naor',
+  author: 'boilerroom',
   isActive: true,              // false אחרי 24 שעות
 }
 ```
@@ -52,7 +52,7 @@ function CreateAlert() {
     const alertRef = await addDoc(collection(db, 'alerts'), {
       ...form,
       timestamp: serverTimestamp(),
-      author: 'naor',
+      author: 'boilerroom',
       isActive: true
     })
 
@@ -279,8 +279,8 @@ npm run dev
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  1. אתה (נאור) נכנס ל-Admin Panel (Web)       │
-│     https://admin.naorbaruch.com               │
+│  1. אתה נכנס ל-Admin Panel (Web)       │
+│     https://admin.boilerroom.com               │
 └─────────────────────────────────────────────────┘
                     ↓
 ┌─────────────────────────────────────────────────┐

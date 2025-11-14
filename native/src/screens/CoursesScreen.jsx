@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 
 const GOLD = '#E63946'
-const BG = '#FFFFFF'
+const BG = '#000000'
 const DEEP_BLUE = '#2D6A4F'
 
 const COURSES = [
@@ -14,7 +14,7 @@ const COURSES = [
     level: 'Beginner',
     duration: '6 פרקים • 3.5 שעות',
     description: 'מבוא למסחר ממושמע — הגדרת מטרות, ניהול סיכונים ובניית שגרה יומית.',
-    cover: require('../../assets/photos/photo1.jpg'),
+    cover: require('../../assets/photos/IMG_0691.png'),
   },
   {
     id: 'course-2',
@@ -22,7 +22,7 @@ const COURSES = [
     level: 'Intermediate',
     duration: '8 פרקים • 5 שעות',
     description: 'העמקה בתבניות מתקדמות, ניתוח ווליום, וכלים לזיהוי מומנטום.',
-    cover: require('../../assets/photos/photo2.jpeg'),
+    cover: require('../../assets/photos/IMG_0692.png'),
   },
   {
     id: 'course-3',
@@ -30,7 +30,7 @@ const COURSES = [
     level: 'Mindset',
     duration: '5 פרקים • 2 שעות',
     description: 'איך לחבר בין אמונה, תודעה ומסחר בצורה מאוזנת ויציבה.',
-    cover: require('../../assets/photos/photo3.png'),
+    cover: require('../../assets/photos/IMG_0693.png'),
   },
 ]
 

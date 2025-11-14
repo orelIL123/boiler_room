@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 
 const GOLD = '#E63946'
-const BG = '#FFFFFF'
+const BG = '#000000'
 const DEEP_BLUE = '#2D6A4F'
 
 const ARTICLES = [
@@ -13,21 +13,21 @@ const ARTICLES = [
     title: 'הזדמנויות בשוק הדיגיטלי לקראת 2026',
     date: '31 באוקטובר 2025',
     summary: 'איך להתכונן לשינויים הצפויים בשוק ולהפוך מידע להזדמנויות השקעה.',
-    image: require('../../assets/photos/photo2.jpeg'),
+    image: require('../../assets/photos/IMG_0692.png'),
   },
   {
     id: 'news-2',
     title: 'Mindset של טריידר – שיעורים מהקהילה',
     date: '29 באוקטובר 2025',
     summary: 'תובנות מרכזיות מהקהילה שלנו על ניהול רגשות ועמידה ביעדים.',
-    image: require('../../assets/photos/photo3.png'),
+    image: require('../../assets/photos/IMG_0693.png'),
   },
   {
     id: 'news-3',
     title: 'טל ממליץ: 3 מניות למעקב מקרוב',
     date: '27 באוקטובר 2025',
     summary: 'הסקירה השבועית עם נקודות מפתח לפני שבוע המסחר הבא.',
-    image: require('../../assets/photos/photo4.png'),
+    image: require('../../assets/photos/IMG_0694.png'),
   },
 ]
 

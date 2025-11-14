@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { sendLocalNotification, formatAlertForPush } from '../utils/notifications'
 
 const GOLD = '#E63946'
-const BG = '#FFFFFF'
+const BG = '#000000'
 const DEEP_BLUE = '#2D6A4F'
 
 const TABS = [

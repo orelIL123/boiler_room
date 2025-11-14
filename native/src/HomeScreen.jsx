@@ -5,25 +5,27 @@ import { Ionicons } from '@expo/vector-icons'
 import { Grayscale } from 'react-native-color-matrix-image-filters'
 
 const GOLD = '#E63946'
-const BG = '#FFFFFF'
+const BG = '#000000'
 const DEEP_BLUE = '#2D6A4F'
+const GREEN = '#16a34a'
+const BRIGHT_GREEN = '#22c55e'
 
 const CARDS = [
-  { key: 'daily-insight', title: 'ערך יומי', desc: 'תובנה מעוררת השראה ליום שלך', icon: 'bulb-outline', image: require('../assets/photos/photo4.png') },
-  { key: 'community', title: 'קהילה', desc: 'עדכוני קבוצה ושיתופים מהקהילה', icon: 'chatbubbles-outline', image: require('../assets/photos/photo3.png') },
-  { key: 'stock-picks', title: 'המלצות על מניות', desc: 'סיגנלים יומיים/שבועיים למסחר', icon: 'trending-up-outline', image: require('../assets/photos/photo2.jpeg'), locked: true, imageScale: 0.92 },
-  { key: 'academy', title: 'לימודי מסחר', desc: 'קורסי וידאו ומסלולי למידה', icon: 'school-outline', image: require('../assets/photos/photo4.png') },
-  { key: 'live-alerts', title: 'התראות חמות', desc: 'מרכז התראות ופוש בזמן אמת', icon: 'notifications-outline', image: require('../assets/photos/photo3.png'), imageScale: 0.97 },
+  { key: 'daily-insight', title: 'ערך יומי', desc: 'תובנה מעוררת השראה ליום שלך', icon: 'bulb-outline', image: require('../assets/photos/IMG_0694.png') },
+  { key: 'community', title: 'קהילה', desc: 'עדכוני קבוצה ושיתופים מהקהילה', icon: 'chatbubbles-outline', image: require('../assets/photos/IMG_0693.png') },
+  { key: 'stock-picks', title: 'המלצות על מניות', desc: 'סיגנלים יומיים/שבועיים למסחר', icon: 'trending-up-outline', image: require('../assets/photos/IMG_0692.png'), locked: true, imageScale: 0.92 },
+  { key: 'academy', title: 'לימודי מסחר', desc: 'קורסי וידאו ומסלולי למידה', icon: 'school-outline', image: require('../assets/photos/IMG_0694.png') },
+  { key: 'live-alerts', title: 'התראות חמות', desc: 'מרכז התראות ופוש בזמן אמת', icon: 'notifications-outline', image: require('../assets/photos/IMG_0693.png'), imageScale: 0.97 },
 ]
 
 // Carousel image order (image 3 promoted to first)
 const IMAGES = [
-  require('../assets/photos/photo3.png'), // 1st
-  require('../assets/photos/photo1.jpg'),
-  require('../assets/photos/photo2.jpeg'),
-  require('../assets/photos/photo4.png'),
-  require('../assets/photos/photo3.png'),
-  require('../assets/photos/photo1.jpg'),
+  require('../assets/photos/IMG_0693.png'), // 1st
+  require('../assets/photos/IMG_0691.png'),
+  require('../assets/photos/IMG_0692.png'),
+  require('../assets/photos/IMG_0694.png'),
+  require('../assets/photos/IMG_0693.png'),
+  require('../assets/photos/IMG_0691.png'),
 ]
 
 function useFadeIn(delay = 0) {
@@ -186,6 +188,12 @@ export default function HomeScreen({ navigation }) {
     })
   }, [])
 
+  const openYouTube = React.useCallback(() => {
+    Linking.openURL('https://www.youtube.com/@BoilerRoom.Israel').catch(() => {
+      Alert.alert('שגיאה', 'לא ניתן לפתוח את הקישור')
+    })
+  }, [])
+
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
@@ -211,7 +219,7 @@ export default function HomeScreen({ navigation }) {
           )}
         </Pressable>
         <View style={styles.headerContent}>
-          <Text style={styles.title}>NAOR BARUCH</Text>
+          <Text style={styles.title}>BOILER ROOM</Text>
           <Text style={styles.subtitle}>Trading • Mindset • Faith</Text>
         </View>
       </View>
@@ -248,6 +256,37 @@ export default function HomeScreen({ navigation }) {
               />
             )}
           />
+
+          {/* YouTube Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>בואו ליוטיוב</Text>
+            </View>
+            <Pressable
+              onPress={openYouTube}
+              style={styles.youtubeCard}
+              accessibilityRole="button"
+              accessibilityLabel="בואו ליוטיוב"
+            >
+              <ImageBackground
+                source={require('../assets/photos/youtube.jpg')}
+                style={styles.youtubeCardImage}
+                imageStyle={styles.youtubeCardImageStyle}
+                resizeMode="cover"
+              >
+                <LinearGradient
+                  colors={['rgba(34,197,94,0.4)', 'rgba(22,163,74,0.2)']}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={styles.youtubeCardContent}>
+                  <Ionicons name="logo-youtube" size={50} color="#FF0000" />
+                  <Text style={styles.youtubeCardTitle}>Boiler Room</Text>
+                  <Text style={styles.youtubeCardSubtitle}>ערוץ היוטיוב שלנו</Text>
+                  <Ionicons name="play-circle" size={32} color="#FFFFFF" style={{ marginTop: 12 }} />
+                </View>
+              </ImageBackground>
+            </Pressable>
+          </View>
 
           {/* Market Snapshot */}
           <View style={styles.section}>
@@ -291,7 +330,7 @@ export default function HomeScreen({ navigation }) {
           {/* Podcasts / Meditations */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>פינת פודקאסטים / מדיטציות</Text>
+              <Text style={styles.sectionTitle}>פינת פודקאסטים </Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.podcastRow}>
               {[1,2,3].map(i => (
@@ -328,12 +367,12 @@ export default function HomeScreen({ navigation }) {
             </View>
           </View>
 
-          {/* Naor Recommends */}
+          {/* Boiler Room Recommends */}
           <View style={styles.section}>
             <Pressable style={styles.recoBanner} accessibilityRole="button">
               <LinearGradient colors={[ '#2D6A4F', '#40916C' ]} style={StyleSheet.absoluteFill} />
               <View style={{ flex: 1, alignItems: 'flex-end', justifyContent: 'center' }}>
-                <Text style={styles.recoTitle}>טל ממליץ לראות</Text>
+                <Text style={styles.recoTitle}>Boiler Room ממליץ לראות</Text>
                 <Text style={styles.recoDesc} numberOfLines={2}>וידאו, מאמר או תובנה מומלצים במיוחד עבורך</Text>
                 <View style={styles.recoCta}>
                   <Text style={styles.recoCtaText}>צפה עכשיו</Text>
@@ -351,7 +390,7 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.socialRow}>
               <Pressable
                 style={styles.socialButton}
-                onPress={() => openSocialLink('https://www.instagram.com/naor_baruch')}
+                onPress={() => openSocialLink('https://www.instagram.com/boilerroom')}
                 accessibilityRole="button"
                 accessibilityLabel="Instagram"
               >
@@ -360,7 +399,7 @@ export default function HomeScreen({ navigation }) {
               </Pressable>
               <Pressable
                 style={styles.socialButton}
-                onPress={() => openSocialLink('https://t.me/naor_baruch')}
+                onPress={() => openSocialLink('https://t.me/boilerroom')}
                 accessibilityRole="button"
                 accessibilityLabel="Telegram"
               >
@@ -462,10 +501,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    backgroundColor: '#000000',
   },
   headerContent: {
     alignItems: 'center',
     marginTop: 6,
+  },
+  logo: {
+    width: 60,
+    height: 60,
+    marginBottom: 8,
   },
   headerMenu: {
     position: 'absolute',
@@ -534,32 +579,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   sectionTitle: {
-    color: DEEP_BLUE,
+    color: BRIGHT_GREEN,
     fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'Heebo_600SemiBold',
   },
   snapshotBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(11,27,58,0.04)',
+    backgroundColor: '#1F2937',
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(11,27,58,0.08)',
+    borderWidth: 2,
+    borderColor: BRIGHT_GREEN,
   },
   snapshotItem: {
     alignItems: 'flex-end',
     minWidth: 96,
   },
   snapshotLabel: {
-    color: '#6b7280',
+    color: '#9CA3AF',
     fontSize: 12,
     fontFamily: 'Poppins_500Medium',
   },
   snapshotValue: {
-    color: DEEP_BLUE,
+    color: '#E5E7EB',
     fontSize: 15,
     marginTop: 2,
     fontFamily: 'Poppins_600SemiBold',
@@ -576,14 +621,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_500Medium',
   },
   quoteCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#1F2937',
     borderRadius: 14,
     padding: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(11,27,58,0.08)',
+    borderWidth: 2,
+    borderColor: BRIGHT_GREEN,
   },
   quoteText: {
-    color: DEEP_BLUE,
+    color: '#E5E7EB',
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'right',
@@ -596,7 +641,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   quoteAuthor: {
-    color: '#6b7280',
+    color: '#9CA3AF',
     fontSize: 12,
     fontFamily: 'Poppins_400Regular',
   },
@@ -622,20 +667,20 @@ const styles = StyleSheet.create({
     width: 160,
     height: 110,
     borderRadius: 12,
-    backgroundColor: 'rgba(11,27,58,0.04)',
+    backgroundColor: '#1F2937',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(11,27,58,0.08)',
+    borderColor: 'rgba(255,255,255,0.1)',
     padding: 12,
     alignItems: 'flex-end',
     justifyContent: 'space-between',
   },
   podcastTitle: {
-    color: DEEP_BLUE,
+    color: '#E5E7EB',
     fontSize: 14,
     fontFamily: 'Poppins_600SemiBold',
   },
   podcastDesc: {
-    color: '#6b7280',
+    color: '#9CA3AF',
     fontSize: 12,
     fontFamily: 'Poppins_400Regular',
   },
@@ -643,11 +688,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#1F2937',
     borderRadius: 14,
     padding: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(11,27,58,0.08)',
+    borderWidth: 2,
+    borderColor: BRIGHT_GREEN,
   },
   medalIcon: {
     width: 52,
@@ -658,7 +703,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   medalTitle: {
-    color: DEEP_BLUE,
+    color: '#E5E7EB',
     fontSize: 14,
     marginBottom: 8,
     fontFamily: 'Poppins_600SemiBold',
@@ -666,7 +711,7 @@ const styles = StyleSheet.create({
   progressBar: {
     width: '100%',
     height: 8,
-    backgroundColor: 'rgba(11,27,58,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 999,
     overflow: 'hidden',
   },
@@ -676,7 +721,7 @@ const styles = StyleSheet.create({
   },
   progressText: {
     marginTop: 6,
-    color: '#6b7280',
+    color: '#9CA3AF',
     fontSize: 12,
     textAlign: 'right',
     fontFamily: 'Poppins_500Medium',
@@ -726,17 +771,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   cardLabelTitle: {
-    color: GOLD,
+    color: '#FFFFFF',
     fontSize: 18,
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'Heebo_600SemiBold',
     marginBottom: 2,
   },
   cardLabelDesc: {
-    color: '#2D6A4F',
+    color: '#FFFFFF',
     opacity: 0.9,
     fontSize: 13,
     lineHeight: 18,
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'Heebo_400Regular',
   },
   cardPressable: {
     justifyContent: 'center',
@@ -807,9 +852,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 8,
     paddingBottom: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: '#000000',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.08)',
+    borderTopColor: 'rgba(255,255,255,0.1)',
   },
   navItemPressable: {
     alignItems: 'center',
@@ -855,15 +900,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(11,27,58,0.04)',
+    backgroundColor: '#1F2937',
     borderRadius: 12,
     padding: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(11,27,58,0.08)',
+    borderWidth: 2,
+    borderColor: BRIGHT_GREEN,
     gap: 8,
   },
   socialLabel: {
-    color: DEEP_BLUE,
+    color: '#E5E7EB',
     fontSize: 14,
     fontFamily: 'Poppins_500Medium',
   },
@@ -909,6 +954,48 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: GOLD,
     fontFamily: 'Poppins_600SemiBold',
+  },
+  youtubeCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginTop: 8,
+    shadowColor: BRIGHT_GREEN,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
+  youtubeCardImage: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  youtubeCardImageStyle: {
+    borderRadius: 16,
+  },
+  youtubeCardContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  youtubeCardTitle: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontFamily: 'Heebo_700Bold',
+    marginTop: 12,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  youtubeCardSubtitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Heebo_500Medium',
+    marginTop: 8,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
 })
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { StatusBar } from 'expo-status-bar'
-import { View, ActivityIndicator, Image, Animated } from 'react-native'
+import { View, ActivityIndicator, Image, Animated, Dimensions } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import * as Notifications from 'expo-notifications'
@@ -13,6 +13,7 @@ import LiveAlertsScreen from './src/screens/LiveAlertsScreen'
 import AdminScreen from './src/screens/AdminScreen'
 import { useFonts, Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins'
 import { CinzelDecorative_400Regular, CinzelDecorative_700Bold } from '@expo-google-fonts/cinzel-decorative'
+import { Heebo_400Regular, Heebo_500Medium, Heebo_600SemiBold, Heebo_700Bold } from '@expo-google-fonts/heebo'
 import { registerForPushNotificationsAsync } from './src/utils/notifications'
 
 const Stack = createNativeStackNavigator()
@@ -28,6 +29,10 @@ export default function App() {
     Poppins_700Bold,
     CinzelDecorative_400Regular,
     CinzelDecorative_700Bold,
+    Heebo_400Regular,
+    Heebo_500Medium,
+    Heebo_600SemiBold,
+    Heebo_700Bold,
   })
 
   useEffect(() => {
@@ -74,17 +79,17 @@ export default function App() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000000' }}>
         <ActivityIndicator color="#D4AF37" />
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
       </View>
     )
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <View style={{ flex: 1, backgroundColor: '#000000' }}>
       <NavigationContainer ref={navigationRef}>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="DailyInsight" component={DailyInsightScreen} />
@@ -106,14 +111,19 @@ export default function App() {
               right: 0, 
               bottom: 0, 
               opacity: fadeAnim, 
-              backgroundColor: '#000' 
+              backgroundColor: '#000000',
+              alignItems: 'center',
+              justifyContent: 'center'
             }
           ]}
         >
           <Image
             source={require('./assets/splashphoto.png')}
-            style={{ width: '100%', height: '100%' }}
-            resizeMode="cover"
+            style={{ 
+              width: Dimensions.get('window').width,
+              height: Dimensions.get('window').height
+            }}
+            resizeMode="contain"
           />
         </Animated.View>
       )}
