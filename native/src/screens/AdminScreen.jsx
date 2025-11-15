@@ -7,8 +7,10 @@ import { sendLocalNotification, formatAlertForPush } from '../utils/notification
 const GOLD = '#E63946'
 const BG = '#000000'
 const DEEP_BLUE = '#2D6A4F'
+const GREEN = '#16a34a'
 
 const TABS = [
+  { id: 'daily-insight', label: 'ערך יומי', icon: 'bulb-outline' },
   { id: 'alerts', label: 'התראות', icon: 'notifications-outline' },
   { id: 'courses', label: 'קורסים', icon: 'school-outline' },
   { id: 'recommendations', label: 'המלצות', icon: 'sparkles-outline' },
@@ -16,7 +18,7 @@ const TABS = [
 ]
 
 export default function AdminScreen({ navigation }) {
-  const [activeTab, setActiveTab] = useState('alerts')
+  const [activeTab, setActiveTab] = useState('daily-insight')
 
   return (
     <SafeAreaView style={styles.container}>
@@ -37,7 +39,12 @@ export default function AdminScreen({ navigation }) {
 
       {/* Tabs */}
       <View style={styles.tabsContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={styles.tabs}
+          style={{ direction: 'rtl' }}
+        >
           {TABS.map(tab => (
             <Pressable
               key={tab.id}
@@ -59,12 +66,182 @@ export default function AdminScreen({ navigation }) {
 
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {activeTab === 'daily-insight' && <DailyInsightForm />}
         {activeTab === 'alerts' && <AlertsForm />}
         {activeTab === 'courses' && <CoursesForm />}
         {activeTab === 'recommendations' && <RecommendationsForm />}
         {activeTab === 'news' && <NewsForm />}
       </ScrollView>
     </SafeAreaView>
+  )
+}
+
+// ========== DAILY INSIGHT FORM ==========
+function DailyInsightForm() {
+  const [form, setForm] = useState({
+    title: 'הכוח של סבלנות במסחר',
+    category: 'Mindset',
+    author: 'טל פרטוק',
+    content: 'המסחר הוא מרתון, לא ספרינט.\n\nכשאתה מתחיל את הדרך, אתה רוצה תוצאות מהירות...',
+    imageUrl: '',
+    videoUrl: '',
+    videoType: null, // 'url' | 'youtube' | null
+  })
+
+  const handleSubmit = () => {
+    Alert.alert(
+      'ערך יומי יתווסף! ✨',
+      `כותרת: ${form.title}\nקטגוריה: ${form.category}\n\nבגרסה הסופית:\n• העלאת תמונה ל-Firebase Storage (אם נבחרה)\n• העלאת וידאו ל-Firebase Storage או קישור ל-YouTube\n• שמירת הנתונים ב-Firestore\n• שליחת Push למשתמשים`
+    )
+  }
+
+  return (
+    <View style={styles.formContainer}>
+      <Text style={styles.formTitle}>✨ העלאת ערך יומי חדש</Text>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>כותרת הערך</Text>
+        <TextInput
+          style={styles.input}
+          value={form.title}
+          onChangeText={text => setForm({...form, title: text})}
+          placeholder="לדוגמה: הכוח של סבלנות במסחר"
+        />
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>קטגוריה</Text>
+        <View style={styles.radioGroup}>
+          {['Mindset', 'Strategy', 'Risk Management', 'Psychology'].map(cat => (
+            <Pressable
+              key={cat}
+              style={[styles.radioButton, form.category === cat && styles.radioButtonActive]}
+              onPress={() => setForm({...form, category: cat})}
+            >
+              <Text style={[styles.radioText, form.category === cat && styles.radioTextActive]}>
+                {cat}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>מחבר</Text>
+        <TextInput
+          style={styles.input}
+          value={form.author}
+          onChangeText={text => setForm({...form, author: text})}
+          placeholder="לדוגמה: טל פרטוק"
+        />
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>תוכן הערך</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          value={form.content}
+          onChangeText={text => setForm({...form, content: text})}
+          multiline
+          numberOfLines={8}
+          placeholder="הזן את התוכן כאן..."
+          textAlignVertical="top"
+        />
+      </View>
+
+      {/* מדיה - תמונה */}
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>📷 תמונה (אופציונלי)</Text>
+        <Text style={styles.helpText}>העלה תמונה שתופיע בראש הערך</Text>
+        <View style={styles.uploadSection}>
+          <Pressable style={styles.uploadButton}>
+            <Ionicons name="image-outline" size={24} color={GOLD} />
+            <Text style={styles.uploadButtonText}>העלה תמונה</Text>
+          </Pressable>
+          {form.imageUrl ? (
+            <Text style={styles.uploadStatus}>✅ תמונה נבחרה</Text>
+          ) : null}
+        </View>
+        <TextInput
+          style={styles.input}
+          value={form.imageUrl}
+          onChangeText={text => setForm({...form, imageUrl: text})}
+          placeholder="או הזן URL ישירות מ-Firebase Storage"
+        />
+      </View>
+
+      {/* מדיה - וידאו */}
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>🎥 וידאו קצר (אופציונלי)</Text>
+        <Text style={styles.helpText}>העלה וידאו קצר או קישור ל-YouTube</Text>
+        
+        <View style={styles.radioGroup}>
+          <Pressable
+            style={[styles.radioButton, form.videoType === 'url' && styles.radioButtonActive]}
+            onPress={() => setForm({...form, videoType: 'url', videoUrl: ''})}
+          >
+            <Text style={[styles.radioText, form.videoType === 'url' && styles.radioTextActive]}>
+              🔗 Firebase Storage URL
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.radioButton, form.videoType === 'youtube' && styles.radioButtonActive]}
+            onPress={() => setForm({...form, videoType: 'youtube', videoUrl: ''})}
+          >
+            <Text style={[styles.radioText, form.videoType === 'youtube' && styles.radioTextActive]}>
+              ▶️ YouTube Link
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.radioButton, form.videoType === null && styles.radioButtonActive]}
+            onPress={() => setForm({...form, videoType: null, videoUrl: ''})}
+          >
+            <Text style={[styles.radioText, form.videoType === null && styles.radioTextActive]}>
+              ❌ ללא וידאו
+            </Text>
+          </Pressable>
+        </View>
+
+        {form.videoType === 'url' && (
+          <View style={styles.uploadSection}>
+            <Pressable style={styles.uploadButton}>
+              <Ionicons name="videocam-outline" size={24} color={GOLD} />
+              <Text style={styles.uploadButtonText}>העלה וידאו</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {form.videoType && (
+          <TextInput
+            style={styles.input}
+            value={form.videoUrl}
+            onChangeText={text => setForm({...form, videoUrl: text})}
+            placeholder={
+              form.videoType === 'youtube'
+                ? 'הזן קישור YouTube (לדוגמה: https://www.youtube.com/watch?v=...)'
+                : 'הזן URL מ-Firebase Storage'
+            }
+          />
+        )}
+      </View>
+
+      <Pressable style={styles.submitButton} onPress={handleSubmit}>
+        <LinearGradient colors={[GOLD, '#c49b2e']} style={StyleSheet.absoluteFill} />
+        <Ionicons name="checkmark-circle" size={20} color="#fff" />
+        <Text style={styles.submitButtonText}>שמור ערך יומי</Text>
+      </Pressable>
+
+      <View style={styles.infoBox}>
+        <Ionicons name="information-circle-outline" size={20} color={DEEP_BLUE} />
+        <Text style={styles.infoText}>
+          💡 <Text style={styles.infoBold}>המלצות:</Text>{'\n'}
+          • תמונות: עד 2MB, פורמט JPG/PNG{'\n'}
+          • וידאו: עד 50MB, פורמט MP4{'\n'}
+          • YouTube: מומלץ לסרטונים ארוכים{'\n'}
+          • Firebase Storage: אופטימלי לביצועים
+        </Text>
+      </View>
+    </View>
   )
 }
 
@@ -697,5 +874,40 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(212,175,55,0.08)',
     padding: 12,
     borderRadius: 10,
+  },
+  helpText: {
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+    color: '#6b7280',
+    marginBottom: 8,
+    textAlign: 'right',
+  },
+  uploadStatus: {
+    fontSize: 12,
+    fontFamily: 'Poppins_500Medium',
+    color: GREEN,
+    marginTop: 8,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: 'rgba(45,106,79,0.08)',
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: DEEP_BLUE,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: 'Poppins_400Regular',
+    color: DEEP_BLUE,
+    lineHeight: 20,
+    textAlign: 'right',
+  },
+  infoBold: {
+    fontFamily: 'Poppins_600SemiBold',
   },
 })
