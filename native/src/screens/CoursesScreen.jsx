@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { SafeAreaView, View, Text, StyleSheet, ScrollView, Pressable, ImageBackground, Alert } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
@@ -7,7 +7,8 @@ const GOLD = '#E63946'
 const BG = '#000000'
 const DEEP_BLUE = '#2D6A4F'
 
-const COURSES = [
+// קורסים חינמיים
+const FREE_COURSES = [
   {
     id: 'course-1',
     title: 'Foundations of Trading',
@@ -15,7 +16,12 @@ const COURSES = [
     duration: '6 פרקים • 3.5 שעות',
     description: 'מבוא למסחר ממושמע — הגדרת מטרות, ניהול סיכונים ובניית שגרה יומית.',
     cover: require('../../assets/photos/IMG_0691.png'),
+    isFree: true,
   },
+]
+
+// קורסים VIP
+const VIP_COURSES = [
   {
     id: 'course-2',
     title: 'Advanced Technical Analysis',
@@ -23,6 +29,7 @@ const COURSES = [
     duration: '8 פרקים • 5 שעות',
     description: 'העמקה בתבניות מתקדמות, ניתוח ווליום, וכלים לזיהוי מומנטום.',
     cover: require('../../assets/photos/IMG_0692.png'),
+    isFree: false,
   },
   {
     id: 'course-3',
@@ -31,10 +38,13 @@ const COURSES = [
     duration: '5 פרקים • 2 שעות',
     description: 'איך לחבר בין אמונה, תודעה ומסחר בצורה מאוזנת ויציבה.',
     cover: require('../../assets/photos/IMG_0693.png'),
+    isFree: false,
   },
 ]
 
 export default function CoursesScreen({ navigation }) {
+  const [activeTab, setActiveTab] = useState('free')
+
   const onCoursePress = (course) => {
     Alert.alert('בקרוב', `${course.title} ייפתח עם תוכן מלא לאחר חיבור לבקאנד.`)
   }
@@ -55,39 +65,109 @@ export default function CoursesScreen({ navigation }) {
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.subtitle}>המסלול שלך לצמיחה מקצועית</Text>
+      {/* טאבים */}
+      <View style={styles.tabsContainer}>
+        <Pressable
+          style={[styles.tab, activeTab === 'free' && styles.tabActive]}
+          onPress={() => setActiveTab('free')}
+        >
+          <Ionicons 
+            name={activeTab === 'free' ? 'unlock' : 'unlock-outline'} 
+            size={18} 
+            color={activeTab === 'free' ? GOLD : '#6b7280'} 
+          />
+          <Text style={[styles.tabText, activeTab === 'free' && styles.tabTextActive]}>
+            קורסים חינמיים
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[styles.tab, activeTab === 'vip' && styles.tabActive]}
+          onPress={() => setActiveTab('vip')}
+        >
+          <Ionicons 
+            name={activeTab === 'vip' ? 'diamond' : 'diamond-outline'} 
+            size={18} 
+            color={activeTab === 'vip' ? GOLD : '#6b7280'} 
+          />
+          <Text style={[styles.tabText, activeTab === 'vip' && styles.tabTextActive]}>
+            קורסים VIP
+          </Text>
+        </Pressable>
+      </View>
 
-        {COURSES.map((course, idx) => (
-          <Pressable
-            key={course.id}
-            style={[styles.courseCard, idx === 0 && styles.courseCardFirst]}
-            onPress={() => onCoursePress(course)}
-            accessibilityRole="button"
-            accessibilityLabel={`קורס ${course.title}`}
-          >
-            <ImageBackground source={course.cover} style={styles.coverImage} imageStyle={styles.coverImageRadius}>
-              <LinearGradient colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.15)']} style={StyleSheet.absoluteFill} />
-              <View style={styles.courseLabelRow}>
-                <View style={styles.levelPill}>
-                  <Text style={styles.levelText}>{course.level}</Text>
-                </View>
-                <Ionicons name="play-circle" size={28} color={GOLD} />
-              </View>
-              <View style={styles.courseTextBlock}>
-                <Text style={styles.courseTitle}>{course.title}</Text>
-                <View style={styles.courseMetaRow}>
-                  <Ionicons name="time-outline" size={14} color="#f3f4f6" />
-                  <Text style={styles.courseMeta}>{course.duration}</Text>
-                </View>
-                <Text style={styles.courseDesc}>{course.description}</Text>
-              </View>
-            </ImageBackground>
-          </Pressable>
-        ))}
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {activeTab === 'free' ? (
+          <>
+            <Text style={styles.subtitle}>התחל את המסע שלך</Text>
+            {FREE_COURSES.map((course, idx) => (
+              <Pressable
+                key={course.id}
+                style={[styles.courseCard, idx === 0 && styles.courseCardFirst]}
+                onPress={() => onCoursePress(course)}
+                accessibilityRole="button"
+                accessibilityLabel={`קורס ${course.title}`}
+              >
+                <ImageBackground source={course.cover} style={styles.coverImage} imageStyle={styles.coverImageRadius}>
+                  <LinearGradient colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.15)']} style={StyleSheet.absoluteFill} />
+                  <View style={styles.courseLabelRow}>
+                    <View style={styles.levelPill}>
+                      <Text style={styles.levelText}>{course.level}</Text>
+                    </View>
+                    <View style={styles.freeBadge}>
+                      <Ionicons name="unlock" size={14} color={DEEP_BLUE} />
+                      <Text style={styles.freeBadgeText}>חינמי</Text>
+                    </View>
+                  </View>
+                  <View style={styles.courseTextBlock}>
+                    <Text style={styles.courseTitle}>{course.title}</Text>
+                    <View style={styles.courseMetaRow}>
+                      <Ionicons name="time-outline" size={14} color="#f3f4f6" />
+                      <Text style={styles.courseMeta}>{course.duration}</Text>
+                    </View>
+                    <Text style={styles.courseDesc}>{course.description}</Text>
+                  </View>
+                </ImageBackground>
+              </Pressable>
+            ))}
+          </>
+        ) : (
+          <>
+            <Text style={styles.subtitle}>קורסים בלעדיים למשתמשי VIP</Text>
+            {VIP_COURSES.map((course, idx) => (
+              <Pressable
+                key={course.id}
+                style={[styles.courseCard, idx === 0 && styles.courseCardFirst]}
+                onPress={() => onCoursePress(course)}
+                accessibilityRole="button"
+                accessibilityLabel={`קורס ${course.title}`}
+              >
+                <ImageBackground source={course.cover} style={styles.coverImage} imageStyle={styles.coverImageRadius}>
+                  <LinearGradient colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.15)']} style={StyleSheet.absoluteFill} />
+                  <View style={styles.courseLabelRow}>
+                    <View style={styles.levelPill}>
+                      <Text style={styles.levelText}>{course.level}</Text>
+                    </View>
+                    <View style={styles.vipBadge}>
+                      <Ionicons name="diamond" size={14} color={GOLD} />
+                      <Text style={styles.vipBadgeText}>VIP</Text>
+                    </View>
+                  </View>
+                  <View style={styles.courseTextBlock}>
+                    <Text style={styles.courseTitle}>{course.title}</Text>
+                    <View style={styles.courseMetaRow}>
+                      <Ionicons name="time-outline" size={14} color="#f3f4f6" />
+                      <Text style={styles.courseMeta}>{course.duration}</Text>
+                    </View>
+                    <Text style={styles.courseDesc}>{course.description}</Text>
+                  </View>
+                </ImageBackground>
+              </Pressable>
+            ))}
+          </>
+        )}
 
         <View style={styles.footerCard}>
-          <Ionicons name="sparkles-outline" size={32} color={GOLD} />
+          <Ionicons name="diamond" size={32} color={GOLD} />
           <View style={styles.footerTextBlock}>
             <Text style={styles.footerTitle}>מסלול VIP</Text>
             <Text style={styles.footerDesc}>
@@ -131,11 +211,42 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     gap: 18,
   },
+  tabsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    gap: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(11,27,58,0.1)',
+  },
+  tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: 'rgba(11,27,58,0.04)',
+  },
+  tabActive: {
+    backgroundColor: 'rgba(212,175,55,0.15)',
+  },
+  tabText: {
+    fontSize: 14,
+    fontFamily: 'Poppins_500Medium',
+    color: '#6b7280',
+  },
+  tabTextActive: {
+    color: GOLD,
+    fontFamily: 'Poppins_600SemiBold',
+  },
   subtitle: {
     alignSelf: 'flex-end',
     color: DEEP_BLUE,
     fontSize: 15,
     fontFamily: 'Poppins_500Medium',
+    marginTop: 8,
   },
   courseCard: {
     borderRadius: 20,
@@ -171,6 +282,34 @@ const styles = StyleSheet.create({
   levelText: {
     color: '#fdf3c2',
     fontSize: 12,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  freeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: 'rgba(45,106,79,0.2)',
+  },
+  freeBadgeText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  vipBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: 'rgba(212,175,55,0.25)',
+  },
+  vipBadgeText: {
+    color: '#fdf3c2',
+    fontSize: 11,
     fontFamily: 'Poppins_600SemiBold',
   },
   courseTextBlock: {

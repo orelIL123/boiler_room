@@ -11,10 +11,13 @@ import NewsScreen from './src/screens/NewsScreen'
 import ProfileScreen from './src/screens/ProfileScreen'
 import LiveAlertsScreen from './src/screens/LiveAlertsScreen'
 import AdminScreen from './src/screens/AdminScreen'
+import PathsScreen from './src/screens/PathsScreen'
+import CommunityScreen from './src/screens/CommunityScreen'
 import { useFonts, Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins'
 import { CinzelDecorative_400Regular, CinzelDecorative_700Bold } from '@expo-google-fonts/cinzel-decorative'
 import { Heebo_400Regular, Heebo_500Medium, Heebo_600SemiBold, Heebo_700Bold } from '@expo-google-fonts/heebo'
 import { registerForPushNotificationsAsync } from './src/utils/notifications'
+import { UserProvider } from './src/context/UserContext'
 
 const Stack = createNativeStackNavigator()
 
@@ -65,15 +68,48 @@ export default function App() {
 
     // Handle notification tap
     const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      const screen = response.notification.request.content.data.screen
-      if (screen && navigationRef.current) {
-        navigationRef.current.navigate(screen)
+      try {
+        const screen = response.notification.request.content.data?.screen
+        // Validate screen exists and navigation is ready
+        if (screen && navigationRef.current) {
+          // Validate screen name exists in navigator
+          const validScreens = ['Home', 'DailyInsight', 'Courses', 'News', 'Profile', 'LiveAlerts', 'Admin', 'Paths', 'Community']
+          if (validScreens.includes(screen)) {
+            // Use setTimeout to ensure navigation container is fully mounted
+            setTimeout(() => {
+              try {
+                if (navigationRef.current) {
+                  navigationRef.current.navigate(screen)
+                }
+              } catch (navError) {
+                console.log('Navigation error:', navError)
+              }
+            }, 100)
+          } else {
+            console.log('Invalid screen name in notification:', screen)
+          }
+        }
+      } catch (error) {
+        console.log('Error handling notification tap:', error)
       }
     })
 
     return () => {
-      Notifications.removeNotificationSubscription(notificationListener)
-      Notifications.removeNotificationSubscription(responseListener)
+      // Clean up notification listeners
+      if (notificationListener) {
+        try {
+          Notifications.removeNotificationSubscription(notificationListener)
+        } catch (error) {
+          console.log('Error removing notification listener:', error)
+        }
+      }
+      if (responseListener) {
+        try {
+          Notifications.removeNotificationSubscription(responseListener)
+        } catch (error) {
+          console.log('Error removing response listener:', error)
+        }
+      }
     }
   }, [])
 
@@ -87,19 +123,22 @@ export default function App() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#000000' }}>
-      <NavigationContainer ref={navigationRef}>
-        <StatusBar style="light" />
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="DailyInsight" component={DailyInsightScreen} />
-          <Stack.Screen name="Courses" component={CoursesScreen} />
-          <Stack.Screen name="News" component={NewsScreen} />
-          <Stack.Screen name="Profile" component={ProfileScreen} />
-          <Stack.Screen name="LiveAlerts" component={LiveAlertsScreen} />
-          <Stack.Screen name="Admin" component={AdminScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
+    <UserProvider>
+      <View style={{ flex: 1, backgroundColor: '#000000' }}>
+        <NavigationContainer ref={navigationRef}>
+          <StatusBar style="light" />
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="DailyInsight" component={DailyInsightScreen} />
+            <Stack.Screen name="Courses" component={CoursesScreen} />
+            <Stack.Screen name="News" component={NewsScreen} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
+            <Stack.Screen name="LiveAlerts" component={LiveAlertsScreen} />
+            <Stack.Screen name="Admin" component={AdminScreen} />
+            <Stack.Screen name="Paths" component={PathsScreen} />
+            <Stack.Screen name="Community" component={CommunityScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
       {showSplash && (
         <Animated.View 
           pointerEvents="none" 
@@ -127,6 +166,7 @@ export default function App() {
           />
         </Animated.View>
       )}
-    </View>
+      </View>
+    </UserProvider>
   )
 }

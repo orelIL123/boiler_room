@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
-import { SafeAreaView, View, Text, StyleSheet, ScrollView, Pressable, TextInput, Alert, Platform } from 'react-native'
+import { SafeAreaView, View, Text, StyleSheet, ScrollView, Pressable, TextInput, Alert, Platform, Image } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { sendLocalNotification, formatAlertForPush } from '../utils/notifications'
+import * as ImagePicker from 'expo-image-picker'
+import { addNewsArticle } from '../services/newsData'
 
 const GOLD = '#E63946'
 const BG = '#000000'
@@ -607,13 +609,52 @@ function RecommendationsForm() {
 // ========== NEWS FORM ==========
 function NewsForm() {
   const [form, setForm] = useState({
-    title: 'השוק בתנודתיות גבוהה',
-    category: 'market',
-    content: 'המדדים הראשיים נסחרים בתנודתיות גבוהה...',
+    title: '',
+    summary: '',
+    image: null,
+    imageType: null,
   })
 
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert('הרשאה נדרשת', 'אנא אפשר גישה לתמונות')
+      return
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    })
+
+    if (!result.canceled && result.assets[0]) {
+      setForm({
+        ...form,
+        image: { uri: result.assets[0].uri },
+        imageType: 'uri',
+      })
+    }
+  }
+
   const handleSubmit = () => {
-    Alert.alert('חדשה תתפרסם! 📰', `כותרת: ${form.title}\nקטגוריה: ${form.category}`)
+    if (!form.title.trim() || !form.summary.trim()) {
+      Alert.alert('שגיאה', 'אנא מלא את כל השדות')
+      return
+    }
+
+    addNewsArticle({
+      title: form.title,
+      summary: form.summary,
+      image: form.image,
+      imageType: form.imageType,
+    })
+
+    Alert.alert('חדשה נוספה! 📰', `כותרת: ${form.title}\n\nהחדשה נוספה בהצלחה. רענן את מסך החדשות כדי לראות אותה.`)
+    
+    // Reset form
+    setForm({ title: '', summary: '', image: null, imageType: null })
   }
 
   return (
@@ -621,44 +662,54 @@ function NewsForm() {
       <Text style={styles.formTitle}>📰 פרסום חדשה</Text>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>קטגוריה</Text>
-        <View style={styles.radioGroup}>
-          {[
-            { value: 'market', label: '📊 שוק' },
-            { value: 'crypto', label: '₿ קריפטו' },
-            { value: 'education', label: '📚 לימוד' }
-          ].map(option => (
-            <Pressable
-              key={option.value}
-              style={[styles.radioButton, form.category === option.value && styles.radioButtonActive]}
-              onPress={() => setForm({...form, category: option.value})}
-            >
-              <Text style={[styles.radioText, form.category === option.value && styles.radioTextActive]}>
-                {option.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.formGroup}>
         <Text style={styles.label}>כותרת</Text>
         <TextInput
           style={styles.input}
           value={form.title}
           onChangeText={text => setForm({...form, title: text})}
+          placeholder="הזן כותרת..."
+          placeholderTextColor="#9ca3af"
         />
       </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.label}>תוכן</Text>
+        <Text style={styles.label}>תקציר</Text>
         <TextInput
           style={[styles.input, styles.textArea]}
-          value={form.content}
-          onChangeText={text => setForm({...form, content: text})}
+          value={form.summary}
+          onChangeText={text => setForm({...form, summary: text})}
+          placeholder="הזן תקציר..."
+          placeholderTextColor="#9ca3af"
           multiline
-          numberOfLines={6}
+          numberOfLines={4}
+          textAlignVertical="top"
         />
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>📷 תמונה</Text>
+        <Text style={styles.helpText}>העלה תמונה שתופיע בחדשה</Text>
+        <Pressable style={styles.uploadButton} onPress={pickImage}>
+          <Ionicons name="image-outline" size={24} color={GOLD} />
+          <Text style={styles.uploadButtonText}>
+            {form.image ? 'תמונה נבחרה' : 'העלה תמונה'}
+          </Text>
+        </Pressable>
+        {form.image && (
+          <View style={{ marginTop: 12, position: 'relative', borderRadius: 12, overflow: 'hidden' }}>
+            <Image
+              source={form.image}
+              style={{ width: '100%', height: 200 }}
+              resizeMode="cover"
+            />
+            <Pressable
+              style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 12 }}
+              onPress={() => setForm({ ...form, image: null, imageType: null })}
+            >
+              <Ionicons name="close-circle" size={24} color="#dc2626" />
+            </Pressable>
+          </View>
+        )}
       </View>
 
       <Pressable style={styles.submitButton} onPress={handleSubmit}>

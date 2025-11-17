@@ -1,8 +1,10 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, FlatList, Pressable, Animated, Platform, Dimensions, Image, ImageBackground, ScrollView, Share, Alert, Easing, Linking } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { Grayscale } from 'react-native-color-matrix-image-filters'
+import SideMenu from './components/SideMenu'
+import { useUser } from './context/UserContext'
 
 const GOLD = '#E63946'
 const BG = '#000000'
@@ -36,29 +38,116 @@ function useFadeIn(delay = 0) {
   return anim
 }
 
-// Mocked market snapshot that updates periodically to feel "live"
+// Market snapshot from API
 const INITIAL_MARKET = [
-  { key: 'TA35', label: 'ת\'א 35', value: 1890.25, change: 0.45 },
-  { key: 'NASDAQ', label: 'Nasdaq', value: 14780.12, change: -0.32 },
-  { key: 'BTC', label: 'Bitcoin', value: 68250, change: 1.25 },
+  { key: 'ETH', label: 'Ethereum', value: 3500.00, change: 0.45 },
+  { key: 'XRP', label: 'XRP', value: 0.65, change: 1.25 },
 ]
 
-function useMarketMock(initialItems = INITIAL_MARKET) {
-  const [items, setItems] = React.useState(initialItems)
-  React.useEffect(() => {
-    const id = setInterval(() => {
-      setItems(prev => prev.map(it => {
-        const delta = (Math.random() - 0.5) * 0.8 // -0.4% to +0.4%
-        const nextValue = it.key === 'BTC'
-          ? Math.max(0, Math.round(it.value * (1 + delta / 100)))
-          : Math.max(0, parseFloat((it.value * (1 + delta / 100)).toFixed(2)))
-        const nextChange = parseFloat(delta.toFixed(2))
-        return { ...it, value: nextValue, change: nextChange }
-      }))
-    }, 3500)
-    return () => clearInterval(id)
+const MARKET_API_BASE = 'https://apimarket-mskm.onrender.com'
+
+// Popular symbols available via API
+const AVAILABLE_SYMBOLS = [
+  { key: 'ETH', label: 'Ethereum', symbol: 'ETH' },
+  { key: 'XRP', label: 'XRP', symbol: 'XRP' },
+  { key: 'BTC', label: 'Bitcoin', symbol: 'BTC' },
+  { key: 'AAPL', label: 'Apple', symbol: 'AAPL' },
+  { key: 'GOOGL', label: 'Google', symbol: 'GOOGL' },
+  { key: 'MSFT', label: 'Microsoft', symbol: 'MSFT' },
+  { key: 'TSLA', label: 'Tesla', symbol: 'TSLA' },
+  { key: 'NVDA', label: 'NVIDIA', symbol: 'NVDA' },
+  { key: 'AMZN', label: 'Amazon', symbol: 'AMZN' },
+  { key: 'META', label: 'Meta', symbol: 'META' },
+  { key: 'SOL', label: 'Solana', symbol: 'SOL' },
+  { key: 'ADA', label: 'Cardano', symbol: 'ADA' },
+  { key: 'DOGE', label: 'Dogecoin', symbol: 'DOGE' },
+]
+
+// Default selected symbols
+const DEFAULT_SELECTED = ['ETH', 'XRP']
+
+function useMarketData(selectedSymbols = DEFAULT_SELECTED) {
+  const [items, setItems] = React.useState(INITIAL_MARKET)
+  const [loading, setLoading] = React.useState(false)
+  const [error, setError] = React.useState(null)
+  const previousPrices = React.useRef({})
+
+  const fetchMarketData = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Get symbols to fetch based on selection
+      const symbolsToFetch = AVAILABLE_SYMBOLS.filter(s => selectedSymbols.includes(s.key))
+      
+      // Fetch data for each selected symbol
+      const promises = symbolsToFetch.map(async ({ key, label, symbol }) => {
+        try {
+          const response = await fetch(`${MARKET_API_BASE}/price/${symbol}`)
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+          const data = await response.json()
+          
+          // API returns: { symbol, price, currency, last_refreshed, source }
+          const currentPrice = data.price || 0
+          const previousPrice = previousPrices.current[key]
+          
+          // Calculate change percentage
+          let change = 0
+          if (previousPrice && previousPrice > 0) {
+            change = ((currentPrice - previousPrice) / previousPrice) * 100
+          }
+          
+          // Store current price for next calculation
+          previousPrices.current[key] = currentPrice
+          
+          return {
+            key,
+            label,
+            value: currentPrice,
+            change: parseFloat(change.toFixed(2)),
+          }
+        } catch (err) {
+          // Silently handle errors for unsupported symbols (like TA35, NASDAQ)
+          // Only log if it's not a 404 (expected for unsupported symbols)
+          if (err.message && !err.message.includes('404')) {
+            console.warn(`Error fetching ${symbol}:`, err.message)
+          }
+          // Return null on error - we'll keep previous data from state
+          return null
+        }
+      })
+      
+      const results = await Promise.all(promises)
+      // Filter out null results (errors) and update only successful ones
+      const successfulResults = results.filter(item => item !== null && item.value > 0)
+      
+      // Merge with previous items to keep data for failed symbols
+      setItems(prevItems => {
+        const updatedMap = new Map(successfulResults.map(item => [item.key, item]))
+        return prevItems.map(item => updatedMap.get(item.key) || item)
+      })
+    } catch (err) {
+      console.error('Error fetching market data:', err)
+      setError(err.message)
+      // Keep previous data on error
+    } finally {
+      setLoading(false)
+    }
   }, [])
-  return items
+
+  React.useEffect(() => {
+    // Fetch immediately on mount
+    fetchMarketData()
+    
+    // Then fetch every 5 seconds to keep data fresh
+    const interval = setInterval(fetchMarketData, 5000)
+    
+    return () => clearInterval(interval)
+  }, [fetchMarketData, selectedSymbols])
+
+  return { items, loading, error }
 }
 
 function Card({ item, index, scrollX, SNAP, CARD_WIDTH, CARD_HEIGHT, OVERLAP, onPress }) {
@@ -133,9 +222,13 @@ export default function HomeScreen({ navigation }) {
   const sideInset = (width - CARD_WIDTH) / 2
 
   const scrollX = React.useRef(new Animated.Value(0)).current
-  const market = useMarketMock()
+  const [selectedSymbols, setSelectedSymbols] = React.useState(DEFAULT_SELECTED)
+  const { items: market } = useMarketData(selectedSymbols)
   const [activeTab, setActiveTab] = React.useState('home')
+  const [sideMenuVisible, setSideMenuVisible] = React.useState(false)
+  const [symbolSelectorVisible, setSymbolSelectorVisible] = React.useState(false)
   const pulse = React.useRef(new Animated.Value(0)).current
+  const { userType } = useUser()
 
   const triggerPulse = React.useCallback(() => {
     pulse.setValue(0)
@@ -167,6 +260,10 @@ export default function HomeScreen({ navigation }) {
       navigation?.navigate('DailyInsight')
       return
     }
+    if (key === 'community') {
+      navigation?.navigate('Community')
+      return
+    }
     if (key === 'academy') {
       navigation?.navigate('Courses')
       return
@@ -194,6 +291,13 @@ export default function HomeScreen({ navigation }) {
     })
   }, [])
 
+  const openRecommendations = React.useCallback(() => {
+    // TODO: עדכן את הקישור לפלייליסט ספציפי של סרטוני המלצות
+    Linking.openURL('https://www.youtube.com/@BoilerRoom.Israel').catch(() => {
+      Alert.alert('שגיאה', 'לא ניתן לפתוח את הקישור')
+    })
+  }, [])
+
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
@@ -201,9 +305,9 @@ export default function HomeScreen({ navigation }) {
           accessibilityRole="button"
           style={styles.headerMenu}
           hitSlop={12}
-          onPress={() => navigation?.navigate('Admin')}
+          onPress={() => setSideMenuVisible(true)}
         >
-          <Ionicons name="construct-outline" size={28} color={GOLD} />
+          <Ionicons name="menu" size={28} color={GOLD} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -282,7 +386,7 @@ export default function HomeScreen({ navigation }) {
                   <Ionicons name="logo-youtube" size={50} color="#FF0000" />
                   <Text style={styles.youtubeCardTitle}>Boiler Room</Text>
                   <Text style={styles.youtubeCardSubtitle}>ערוץ היוטיוב שלנו</Text>
-                  <Ionicons name="play-circle" size={32} color="#FFFFFF" style={{ marginTop: 12 }} />
+                  <Ionicons name="play-circle" size={32} color={GOLD} style={{ marginTop: 12 }} />
                 </View>
               </ImageBackground>
             </Pressable>
@@ -292,17 +396,41 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>תצוגת שוק חיה</Text>
+              <Pressable
+                onPress={() => setSymbolSelectorVisible(true)}
+                style={styles.symbolSelectorBtn}
+                accessibilityRole="button"
+              >
+                <Ionicons name="settings-outline" size={18} color={BRIGHT_GREEN} />
+                <Text style={styles.symbolSelectorText}>בחר סימולים</Text>
+              </Pressable>
             </View>
             <View style={styles.snapshotBar}>
               {market.map(m => {
+                // Skip items with invalid data
+                if (!m || !m.value || m.value === 0) return null
+                
                 const up = m.change >= 0
+                // Format price based on symbol type
+                let formattedValue
+                if (['BTC', 'ETH'].includes(m.key)) {
+                  // Crypto with high values - round to integer
+                  formattedValue = Math.round(m.value).toLocaleString()
+                } else if (['XRP', 'ADA', 'DOGE'].includes(m.key)) {
+                  // Low-value crypto - show 4-6 decimals
+                  formattedValue = m.value.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 6 })
+                } else {
+                  // Stocks - show 2 decimals
+                  formattedValue = m.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                }
+                
                 return (
                   <View key={m.key} style={styles.snapshotItem}>
                     <Text style={styles.snapshotLabel}>{m.label}</Text>
-                    <Text style={styles.snapshotValue}>{m.value}</Text>
+                    <Text style={styles.snapshotValue}>{formattedValue}</Text>
                     <View style={styles.snapshotChangeRow}>
                       <Ionicons name={up ? 'caret-up' : 'caret-down'} size={14} color={up ? '#16a34a' : '#dc2626'} />
-                      <Text style={[styles.snapshotChange, { color: up ? '#16a34a' : '#dc2626' }]}>{m.change}%</Text>
+                      <Text style={[styles.snapshotChange, { color: up ? '#16a34a' : '#dc2626' }]}>{m.change >= 0 ? '+' : ''}{m.change.toFixed(2)}%</Text>
                     </View>
                   </View>
                 )
@@ -348,36 +476,55 @@ export default function HomeScreen({ navigation }) {
             </ScrollView>
           </View>
 
-          {/* Digital Medal */}
+          {/* Paths Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>מדליה דיגיטלית</Text>
+              <Text style={styles.sectionTitle}>המסלולים שלנו</Text>
             </View>
-            <View style={styles.medalCard}>
-              <View style={styles.medalIcon}> 
-                <Ionicons name="medal-outline" size={28} color={GOLD} />
-              </View>
-              <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                <Text style={styles.medalTitle}>14 יום של למידה רצופה</Text>
-                <View style={styles.progressBar}>
-                  <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
+            <Pressable
+              style={styles.pathsCard}
+              onPress={() => navigation?.navigate('Paths')}
+              accessibilityRole="button"
+            >
+              <LinearGradient
+                colors={[BRIGHT_GREEN + '30', BRIGHT_GREEN + '10']}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.pathsCardContent}>
+                <Ionicons name="school" size={40} color={BRIGHT_GREEN} />
+                <View style={styles.pathsCardText}>
+                  <Text style={styles.pathsCardTitle}>בוחרים מסלול ומתחילים להגשים</Text>
+                  <Text style={styles.pathsCardDesc}>הכשרה דיגיטלית למסחר והשקעות בשוק ההון</Text>
                 </View>
-                <Text style={styles.progressText}>{completedDays}/14 ימים</Text>
+                <Ionicons name="arrow-forward" size={24} color={BRIGHT_GREEN} />
               </View>
-            </View>
+            </Pressable>
           </View>
 
-          {/* Boiler Room Recommends */}
+          {/* Students Recommendations */}
           <View style={styles.section}>
-            <Pressable style={styles.recoBanner} accessibilityRole="button">
-              <LinearGradient colors={[ '#2D6A4F', '#40916C' ]} style={StyleSheet.absoluteFill} />
-              <View style={{ flex: 1, alignItems: 'flex-end', justifyContent: 'center' }}>
-                <Text style={styles.recoTitle}>Boiler Room ממליץ לראות</Text>
-                <Text style={styles.recoDesc} numberOfLines={2}>וידאו, מאמר או תובנה מומלצים במיוחד עבורך</Text>
-                <View style={styles.recoCta}>
-                  <Text style={styles.recoCtaText}>צפה עכשיו</Text>
-                  <Ionicons name="arrow-forward-circle" size={18} color={GOLD} />
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>תלמידים ממליצים</Text>
+            </View>
+            <Pressable
+              style={styles.recommendationsCard}
+              onPress={openRecommendations}
+              accessibilityRole="button"
+              accessibilityLabel="תלמידים ממליצים"
+            >
+              <LinearGradient
+                colors={['#E4405F', '#C13584', '#833AB4']}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.recommendationsContent}>
+                <Ionicons name="people-circle" size={50} color="#FFFFFF" />
+                <View style={styles.recommendationsText}>
+                  <Text style={styles.recommendationsTitle}>סרטוני המלצות</Text>
+                  <Text style={styles.recommendationsDesc}>
+                    צפה בסרטונים קצרים של תלמידים שמספרים על החוויה שלהם
+                  </Text>
                 </View>
+                <Ionicons name="play-circle" size={40} color="#FFFFFF" />
               </View>
             </Pressable>
           </View>
@@ -394,7 +541,7 @@ export default function HomeScreen({ navigation }) {
                 accessibilityRole="button"
                 accessibilityLabel="Instagram"
               >
-                <Ionicons name="logo-instagram" size={24} color={GOLD} />
+                <Ionicons name="logo-instagram" size={24} color="#E4405F" />
                 <Text style={styles.socialLabel}>Instagram</Text>
               </Pressable>
               <Pressable
@@ -403,7 +550,7 @@ export default function HomeScreen({ navigation }) {
                 accessibilityRole="button"
                 accessibilityLabel="Telegram"
               >
-                <Ionicons name="paper-plane-outline" size={24} color={GOLD} />
+                <Ionicons name="paper-plane-outline" size={24} color="#0088cc" />
                 <Text style={styles.socialLabel}>Telegram</Text>
               </Pressable>
               <Pressable
@@ -412,7 +559,7 @@ export default function HomeScreen({ navigation }) {
                 accessibilityRole="button"
                 accessibilityLabel="WhatsApp"
               >
-                <Ionicons name="logo-whatsapp" size={24} color={GOLD} />
+                <Ionicons name="logo-whatsapp" size={24} color="#25D366" />
                 <Text style={styles.socialLabel}>WhatsApp</Text>
               </Pressable>
             </View>
@@ -436,7 +583,10 @@ export default function HomeScreen({ navigation }) {
 
         <Pressable
           accessibilityRole="button"
-          onPress={() => Alert.alert('בקרוב', 'מסך הקהילה יישום לאחר חיבור לבקאנד')}
+          onPress={() => {
+            setActiveTab('community')
+            navigation?.navigate('Community')
+          }}
           style={styles.navItemPressable}
         >
           <View style={styles.iconBox}>
@@ -486,6 +636,80 @@ export default function HomeScreen({ navigation }) {
           <Text style={[styles.navLabel, { color: activeTab === 'profile' ? GOLD : '#B3B3B3' }]}>פרופיל</Text>
         </Pressable>
       </View>
+
+      <SideMenu
+        visible={sideMenuVisible}
+        onClose={() => setSideMenuVisible(false)}
+        navigation={navigation}
+      />
+
+      {/* Symbol Selector Modal */}
+      {symbolSelectorVisible && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>בחר סימולים</Text>
+              <Pressable
+                onPress={() => setSymbolSelectorVisible(false)}
+                style={styles.modalCloseBtn}
+                accessibilityRole="button"
+              >
+                <Ionicons name="close" size={24} color="#FFFFFF" />
+              </Pressable>
+            </View>
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.modalSubtitle}>בחר עד 5 סימולים לתצוגה</Text>
+              {AVAILABLE_SYMBOLS.map(symbol => {
+                const isSelected = selectedSymbols.includes(symbol.key)
+                return (
+                  <Pressable
+                    key={symbol.key}
+                    onPress={() => {
+                      if (isSelected) {
+                        if (selectedSymbols.length > 1) {
+                          setSelectedSymbols(selectedSymbols.filter(k => k !== symbol.key))
+                        } else {
+                          Alert.alert('חובה לבחור לפחות סימול אחד')
+                        }
+                      } else {
+                        if (selectedSymbols.length < 5) {
+                          setSelectedSymbols([...selectedSymbols, symbol.key])
+                        } else {
+                          Alert.alert('ניתן לבחור עד 5 סימולים')
+                        }
+                      }
+                    }}
+                    style={[styles.symbolOption, isSelected && styles.symbolOptionSelected]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                  >
+                    <View style={styles.symbolOptionContent}>
+                      <Text style={[styles.symbolOptionLabel, isSelected && styles.symbolOptionLabelSelected]}>
+                        {symbol.label}
+                      </Text>
+                      <Text style={[styles.symbolOptionKey, isSelected && styles.symbolOptionKeySelected]}>
+                        {symbol.symbol}
+                      </Text>
+                    </View>
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={24} color={BRIGHT_GREEN} />
+                    )}
+                  </Pressable>
+                )
+              })}
+            </ScrollView>
+            <View style={styles.modalFooter}>
+              <Pressable
+                onPress={() => setSymbolSelectorVisible(false)}
+                style={styles.modalDoneBtn}
+                accessibilityRole="button"
+              >
+                <Text style={styles.modalDoneText}>סיום</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   )
 }
@@ -574,14 +798,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   sectionHeader: {
-    alignItems: 'flex-end',
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 8,
     paddingHorizontal: 4,
+  },
+  symbolSelectorBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(34,197,94,0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: BRIGHT_GREEN,
+  },
+  symbolSelectorText: {
+    color: BRIGHT_GREEN,
+    fontSize: 12,
+    fontFamily: 'Poppins_600SemiBold',
   },
   sectionTitle: {
     color: BRIGHT_GREEN,
     fontSize: 16,
     fontFamily: 'Heebo_600SemiBold',
+    textAlign: 'right',
   },
   snapshotBar: {
     flexDirection: 'row',
@@ -683,84 +926,6 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     fontSize: 12,
     fontFamily: 'Poppins_400Regular',
-  },
-  medalCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#1F2937',
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 2,
-    borderColor: BRIGHT_GREEN,
-  },
-  medalIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(212,175,55,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  medalTitle: {
-    color: '#E5E7EB',
-    fontSize: 14,
-    marginBottom: 8,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  progressBar: {
-    width: '100%',
-    height: 8,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: GOLD,
-  },
-  progressText: {
-    marginTop: 6,
-    color: '#9CA3AF',
-    fontSize: 12,
-    textAlign: 'right',
-    fontFamily: 'Poppins_500Medium',
-  },
-  recoBanner: {
-    height: 120,
-    borderRadius: 14,
-    overflow: 'hidden',
-    padding: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(11,27,58,0.08)',
-  },
-  recoTitle: {
-    color: GOLD,
-    fontSize: 14,
-    marginBottom: 6,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  recoDesc: {
-    color: '#e5e7eb',
-    fontSize: 12,
-    marginBottom: 10,
-    textAlign: 'right',
-    fontFamily: 'Poppins_400Regular',
-  },
-  recoCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(212,175,55,0.15)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  recoCtaText: {
-    color: GOLD,
-    fontSize: 12,
-    fontFamily: 'Poppins_600SemiBold',
   },
   cardItemContainer: {
     alignItems: 'flex-end',
@@ -989,13 +1154,183 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   youtubeCardSubtitle: {
-    color: '#FFFFFF',
+    color: '#000000',
     fontSize: 16,
     fontFamily: 'Heebo_500Medium',
     marginTop: 8,
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
+  },
+  pathsCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginTop: 8,
+    borderWidth: 2,
+    borderColor: BRIGHT_GREEN,
+  },
+  pathsCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    gap: 16,
+  },
+  pathsCardText: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  pathsCardTitle: {
+    fontSize: 18,
+    fontFamily: 'Heebo_700Bold',
+    color: '#FFFFFF',
+    marginBottom: 6,
+    textAlign: 'right',
+  },
+  pathsCardDesc: {
+    fontSize: 14,
+    fontFamily: 'Heebo_400Regular',
+    color: '#D1D5DB',
+    textAlign: 'right',
+  },
+  recommendationsCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginTop: 8,
+    minHeight: 140,
+    shadowColor: '#E4405F',
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
+  recommendationsContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    gap: 16,
+  },
+  recommendationsText: {
+    flex: 1,
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  recommendationsTitle: {
+    fontSize: 20,
+    fontFamily: 'Heebo_700Bold',
+    color: '#FFFFFF',
+    textAlign: 'right',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  recommendationsDesc: {
+    fontSize: 14,
+    fontFamily: 'Heebo_400Regular',
+    color: '#FFFFFF',
+    textAlign: 'right',
+    opacity: 0.95,
+    lineHeight: 20,
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  modalContent: {
+    width: '90%',
+    maxWidth: 400,
+    maxHeight: '80%',
+    backgroundColor: '#1F2937',
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: BRIGHT_GREEN,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  modalTitle: {
+    color: BRIGHT_GREEN,
+    fontSize: 20,
+    fontFamily: 'Heebo_700Bold',
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  modalBody: {
+    padding: 16,
+    maxHeight: 400,
+  },
+  modalSubtitle: {
+    color: '#9CA3AF',
+    fontSize: 14,
+    fontFamily: 'Poppins_400Regular',
+    marginBottom: 16,
+    textAlign: 'right',
+  },
+  symbolOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    marginBottom: 8,
+    backgroundColor: '#374151',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  symbolOptionSelected: {
+    backgroundColor: 'rgba(34,197,94,0.15)',
+    borderColor: BRIGHT_GREEN,
+  },
+  symbolOptionContent: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  symbolOptionLabel: {
+    color: '#E5E7EB',
+    fontSize: 16,
+    fontFamily: 'Poppins_600SemiBold',
+    marginBottom: 4,
+  },
+  symbolOptionLabelSelected: {
+    color: '#FFFFFF',
+  },
+  symbolOptionKey: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+  },
+  symbolOptionKeySelected: {
+    color: BRIGHT_GREEN,
+  },
+  modalFooter: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+  },
+  modalDoneBtn: {
+    backgroundColor: BRIGHT_GREEN,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalDoneText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Poppins_600SemiBold',
   },
 })
 
