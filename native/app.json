@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Boiler Room",
-    "slug": "naor-baruch",
+    "slug": "boiler-room",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/adaptive-icon.png",
